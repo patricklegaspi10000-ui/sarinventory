@@ -5,12 +5,11 @@ import {
 import * as SecureStore from "expo-secure-store";
 import client from "../api/client";
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(null);
 
   async function handleLogin() {
     setError("");
@@ -22,22 +21,13 @@ export default function LoginScreen() {
       setLoading(true);
       const res = await client.post("/auth/login", { username, password });
       await SecureStore.setItemAsync("token", res.data.token);
-      setLoggedIn(res.data);
+      navigation.replace("Dashboard", { user: res.data });
     } catch (err) {
       if (err.response) setError(err.response.data.message);
       else setError("The server is not responding");
     } finally {
       setLoading(false);
     }
-  }
-
-  if (loggedIn) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Welcome, {loggedIn.name}!</Text>
-        <Text style={{ textAlign: "center" }}>Role: {loggedIn.role}</Text>
-      </View>
-    );
   }
 
   return (

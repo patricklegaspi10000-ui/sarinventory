@@ -13,6 +13,7 @@ app.use("/api/v1/categories", require("./src/routes/categoryRoutes"));
 app.use("/api/v1/products", require("./src/routes/productRoutes"));
 app.use("/api/v1/sales", require("./src/routes/saleRoutes"));
 app.use("/api/v1/restocks", require("./src/routes/restockRoutes"));
+app.use("/api/v1/dashboard", require("./src/routes/dashboardRoutes"));
 connectDB()
   .then(() =>
     app.listen(process.env.PORT, () =>

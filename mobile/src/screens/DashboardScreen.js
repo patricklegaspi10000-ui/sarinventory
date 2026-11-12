@@ -11,24 +11,8 @@ import {
 } from "react-native";
 import client from "../api/client";
 
-// Change these if your backend routes are named differently.
-const ENDPOINTS = { products: "/products", sales: "/sales" };
-// An item counts as "low" at or below this many units.
-const LOW_STOCK_LEVEL = 5;
-
-const toList = (data) =>
-  Array.isArray(data)
-    ? data
-    : data?.products ?? data?.sales ?? data?.data ?? [];
-
-// Adjust the field names below to match your models.
-const stockOf = (p) => Number(p.stock ?? p.quantity ?? 0);
-const saleTotal = (s) =>
-  Number(s.total ?? s.totalAmount ?? s.amount ?? (s.price ?? 0) * (s.quantity ?? 1));
-const isToday = (value) =>
-  !!value && new Date(value).toDateString() === new Date().toDateString();
 const peso = (n) =>
-  "₱" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  "₱" + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
 const ACTIONS = [
   { label: "Products", hint: "View and edit items", screen: "Products" },
@@ -38,29 +22,36 @@ const ACTIONS = [
 ];
 
 export default function DashboardScreen({ navigation, route }) {
-  const [products, setProducts] = useState([]);
-  const [sales, setSales] = useState([]);
+  const [summary, setSummary] = useState({
+    salesToday: 0,
+    salesCount: 0,
+    productCount: 0,
+    lowStock: [],
+  });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const [p, s] = await Promise.allSettled([
-      client.get(ENDPOINTS.products),
-      client.get(ENDPOINTS.sales),
-    ]);
-    if (p.status === "fulfilled") setProducts(toList(p.value.data));
-    if (s.status === "fulfilled") setSales(toList(s.value.data));
-    setError(
-      p.status === "rejected" && s.status === "rejected"
-        ? "Can't reach the server. Pull down to try again."
-        : ""
-    );
+    try {
+      const res = await client.get("/dashboard");
+      setSummary(res.data);
+      setError("");
+    } catch (err) {
+      const status = err.response?.status;
+      setError(
+        status
+          ? `Request failed (${status}). ${err.response.data?.message ?? ""}`
+          : "Can't reach the server. Pull down to try again."
+      );
+    }
   }, []);
 
-  useEffect(() => {
+    useEffect(() => {
     load().finally(() => setLoading(false));
-  }, [load]);
+    const unsubscribe = navigation.addListener("focus", load);
+    return unsubscribe;
+  }, [load, navigation]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -70,18 +61,13 @@ export default function DashboardScreen({ navigation, route }) {
 
   const go = (screen) => {
     if (navigation.getState().routeNames.includes(screen)) {
-      navigation.navigate(screen);
+            navigation.navigate(screen, { user: route?.params?.user });
     } else {
       Alert.alert("Not connected yet", `Add the ${screen} screen in App.js first.`);
     }
   };
 
-  const todaySales = sales.filter((s) => isToday(s.createdAt ?? s.date));
-  const todayTotal = todaySales.reduce((sum, s) => sum + saleTotal(s), 0);
-  const lowStock = products
-    .filter((p) => stockOf(p) <= LOW_STOCK_LEVEL)
-    .sort((a, b) => stockOf(a) - stockOf(b));
-
+  const { salesToday, salesCount, productCount, lowStock } = summary;
   const name = route?.params?.user?.name ?? route?.params?.user?.username;
 
   if (loading) {
@@ -111,15 +97,15 @@ export default function DashboardScreen({ navigation, route }) {
 
       <View style={styles.hero}>
         <Text style={styles.heroLabel}>Sales today</Text>
-        <Text style={styles.heroValue}>{peso(todayTotal)}</Text>
+        <Text style={styles.heroValue}>{peso(salesToday)}</Text>
         <Text style={styles.heroSub}>
-          {todaySales.length} {todaySales.length === 1 ? "sale" : "sales"} recorded
+          {salesCount} {salesCount === 1 ? "sale" : "sales"} recorded
         </Text>
       </View>
 
       <View style={styles.row}>
         <View style={[styles.tile, { marginRight: 6 }]}>
-          <Text style={styles.tileValue}>{products.length}</Text>
+          <Text style={styles.tileValue}>{productCount}</Text>
           <Text style={styles.tileLabel}>Products</Text>
         </View>
         <View
@@ -142,15 +128,12 @@ export default function DashboardScreen({ navigation, route }) {
           <Text style={styles.muted}>Everything is well stocked.</Text>
         ) : (
           lowStock.slice(0, 5).map((p, i) => (
-            <View
-              key={p._id ?? p.id ?? i}
-              style={[styles.lowRow, i > 0 && styles.lowRowBorder]}
-            >
+            <View key={p.id ?? i} style={[styles.lowRow, i > 0 && styles.lowRowBorder]}>
               <Text style={styles.lowName} numberOfLines={1}>
                 {p.name}
               </Text>
-              <Text style={[styles.lowQty, stockOf(p) === 0 && { color: C.red }]}>
-                {stockOf(p) === 0 ? "Out of stock" : `${stockOf(p)} left`}
+              <Text style={[styles.lowQty, p.quantity === 0 && { color: C.red }]}>
+                {p.quantity === 0 ? "Out of stock" : `${p.quantity} left`}
               </Text>
             </View>
           ))
