@@ -9,16 +9,16 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as SecureStore from "expo-secure-store";
 import client from "../api/client";
-
-const peso = (n) =>
-  "₱" + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+import { C, money } from "../theme";
 
 const ACTIONS = [
-  { label: "Products", hint: "View and edit items", screen: "Products" },
-  { label: "Record a sale", hint: "Log what was sold", screen: "Sales" },
-  { label: "Restock", hint: "Add new stock", screen: "Restock" },
-  { label: "Categories", hint: "Organize your items", screen: "Categories" },
+  { label: "Products", hint: "View and edit items", screen: "Products", icon: "cube-outline" },
+  { label: "Restock", hint: "Add new stock", screen: "Restock", icon: "add-circle-outline" },
+  { label: "Categories", hint: "Organize items", screen: "Categories", icon: "pricetags-outline" },
+  { label: "Staff", hint: "Helpers and code", screen: "Staff", icon: "people-outline", ownerOnly: true },
 ];
 
 export default function DashboardScreen({ navigation, route }) {
@@ -47,7 +47,7 @@ export default function DashboardScreen({ navigation, route }) {
     }
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     load().finally(() => setLoading(false));
     const unsubscribe = navigation.addListener("focus", load);
     return unsubscribe;
@@ -61,14 +61,30 @@ export default function DashboardScreen({ navigation, route }) {
 
   const go = (screen) => {
     if (navigation.getState().routeNames.includes(screen)) {
-            navigation.navigate(screen, { user: route?.params?.user });
+      navigation.navigate(screen, { user: route?.params?.user });
     } else {
       Alert.alert("Not connected yet", `Add the ${screen} screen in App.js first.`);
     }
   };
 
+  function confirmLogout() {
+    Alert.alert("Log out", "Log out of SarInventory?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log out",
+        style: "destructive",
+        onPress: async () => {
+          await SecureStore.deleteItemAsync("token");
+          navigation.replace("Login");
+        },
+      },
+    ]);
+  }
+
   const { salesToday, salesCount, productCount, lowStock } = summary;
   const name = route?.params?.user?.name ?? route?.params?.user?.username;
+  const role = route?.params?.user?.role;
+  const isOwner = !role || role === "owner";
 
   if (loading) {
     return (
@@ -84,23 +100,38 @@ export default function DashboardScreen({ navigation, route }) {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <Text style={styles.greeting}>{name ? `Welcome, ${name}` : "Welcome"}</Text>
-      <Text style={styles.date}>
-        {new Date().toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-        })}
-      </Text>
+      <View style={styles.top}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.greeting}>{name ? `Hi, ${name}` : "Welcome"}</Text>
+          <Text style={styles.date}>
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.logout} onPress={confirmLogout}>
+          <Ionicons name="log-out-outline" size={22} color={C.ink} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>{isOwner ? "Owner" : "Helper"}</Text>
+      </View>
 
       {!!error && <Text style={styles.error}>{error}</Text>}
 
       <View style={styles.hero}>
         <Text style={styles.heroLabel}>Sales today</Text>
-        <Text style={styles.heroValue}>{peso(salesToday)}</Text>
+        <Text style={styles.heroValue}>{money(salesToday)}</Text>
         <Text style={styles.heroSub}>
           {salesCount} {salesCount === 1 ? "sale" : "sales"} recorded
         </Text>
+        <TouchableOpacity style={styles.cta} onPress={() => go("Sales")} activeOpacity={0.85}>
+          <Ionicons name="cart-outline" size={20} color={C.green} />
+          <Text style={styles.ctaText}>Record a sale</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.row}>
@@ -145,13 +176,16 @@ export default function DashboardScreen({ navigation, route }) {
 
       <Text style={styles.section}>Quick actions</Text>
       <View style={styles.grid}>
-        {ACTIONS.map((a) => (
+        {ACTIONS.filter((a) => !a.ownerOnly || isOwner).map((a) => (
           <TouchableOpacity
             key={a.screen}
             style={styles.action}
             activeOpacity={0.7}
             onPress={() => go(a.screen)}
           >
+            <View style={styles.iconWrap}>
+              <Ionicons name={a.icon} size={22} color={C.green} />
+            </View>
             <Text style={styles.actionLabel}>{a.label}</Text>
             <Text style={styles.actionHint}>{a.hint}</Text>
           </TouchableOpacity>
@@ -161,43 +195,62 @@ export default function DashboardScreen({ navigation, route }) {
   );
 }
 
-const C = {
-  bg: "#F2F5F3",
-  card: "#FFFFFF",
-  ink: "#16231D",
-  muted: "#66756D",
-  line: "#E1E8E4",
-  green: "#0F5C4D",
-  warnBg: "#FFF4DE",
-  warnText: "#9A5B00",
-  red: "#B3372A",
-};
-
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.bg },
   content: { padding: 20, paddingTop: 56, paddingBottom: 40 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.bg },
+  top: { flexDirection: "row", alignItems: "center" },
   greeting: { fontSize: 24, fontWeight: "700", color: C.ink },
-  date: { fontSize: 14, color: C.muted, marginTop: 2, marginBottom: 16 },
+  date: { fontSize: 14, color: C.muted, marginTop: 2 },
+  logout: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.line,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badge: {
+    alignSelf: "flex-start",
+    backgroundColor: C.greenSoft,
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    marginTop: 10,
+    marginBottom: 16,
+  },
+  badgeText: { color: C.green, fontSize: 13, fontWeight: "700" },
   error: {
-    backgroundColor: "#FBE7E4",
+    backgroundColor: C.redBg,
     color: C.red,
     padding: 12,
     borderRadius: 10,
     marginBottom: 12,
     fontSize: 14,
   },
-  hero: { backgroundColor: C.green, borderRadius: 18, padding: 22, marginBottom: 12 },
+  hero: { backgroundColor: C.green, borderRadius: 20, padding: 22, marginBottom: 12 },
   heroLabel: { color: "#BFE3D8", fontSize: 15 },
   heroValue: { color: "#FFFFFF", fontSize: 38, fontWeight: "700", marginTop: 4 },
   heroSub: { color: "#BFE3D8", fontSize: 14, marginTop: 4 },
+  cta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginTop: 18,
+  },
+  ctaText: { color: C.green, fontWeight: "700", fontSize: 16, marginLeft: 8 },
   row: { flexDirection: "row", marginBottom: 8 },
-  tile: { flex: 1, backgroundColor: C.card, borderRadius: 14, padding: 16 },
+  tile: { flex: 1, backgroundColor: C.card, borderRadius: 16, padding: 16 },
   tileWarn: { backgroundColor: C.warnBg },
   tileValue: { fontSize: 28, fontWeight: "700", color: C.ink },
   tileLabel: { fontSize: 14, color: C.muted, marginTop: 2 },
   section: { fontSize: 17, fontWeight: "700", color: C.ink, marginTop: 20, marginBottom: 10 },
-  card: { backgroundColor: C.card, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 6 },
+  card: { backgroundColor: C.card, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 6 },
   muted: { color: C.muted, fontSize: 15, paddingVertical: 12 },
   lowRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12 },
   lowRowBorder: { borderTopWidth: 1, borderTopColor: C.line },
@@ -208,11 +261,20 @@ const styles = StyleSheet.create({
   action: {
     width: "48%",
     backgroundColor: C.card,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: C.line,
+  },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: C.greenSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
   actionLabel: { fontSize: 16, fontWeight: "700", color: C.ink },
   actionHint: { fontSize: 13, color: C.muted, marginTop: 4 },

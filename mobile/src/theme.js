@@ -9,6 +9,7 @@ export const C = {
   warnText: "#9A5B00",
   red: "#B3372A",
   redBg: "#FBE7E4",
+  greenSoft: "#E3F1EC",
 };
 
 export const money = (n) =>
