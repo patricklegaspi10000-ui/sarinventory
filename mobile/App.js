@@ -8,6 +8,7 @@ import RestockScreen from "./src/screens/RestockScreen";
 import CategoriesScreen from "./src/screens/CategoriesScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import StaffScreen from "./src/screens/StaffScreen";
+import SalesHistoryScreen from "./src/screens/SalesHistoryScreen";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
         <Stack.Screen name="Categories" component={CategoriesScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Staff" component={StaffScreen} />
+        <Stack.Screen name="SalesHistory" component={SalesHistoryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

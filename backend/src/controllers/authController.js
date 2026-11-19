@@ -166,3 +166,15 @@ exports.resetHelperPassword = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+exports.me = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("name username role");
+    if (!user) {
+      return res.status(401).json({ message: "Session expired. Please log in again." });
+    }
+    res.json({ name: user.name, username: user.username, role: user.role });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

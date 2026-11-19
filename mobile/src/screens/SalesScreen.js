@@ -85,7 +85,9 @@ export default function SalesScreen({ navigation }) {
           <Text style={styles.back}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Record a sale</Text>
-        <View style={{ width: 60 }} />
+        <TouchableOpacity onPress={() => navigation.navigate("SalesHistory")}>
+          <Text style={styles.history}>History</Text>
+        </TouchableOpacity>
       </View>
 
       {message && (
@@ -186,6 +188,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   back: { color: C.green, fontSize: 16, fontWeight: "600", width: 60 },
+  history: { color: C.green, fontSize: 16, fontWeight: "600", width: 60, textAlign: "right" },
   title: { fontSize: 20, fontWeight: "700", color: C.ink },
   banner: { marginHorizontal: 20, marginBottom: 10, padding: 12, borderRadius: 10, fontSize: 14 },
   bannerOk: { backgroundColor: "#DDF1E8", color: C.green },

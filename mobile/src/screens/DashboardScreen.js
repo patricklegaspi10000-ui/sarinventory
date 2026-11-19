@@ -13,10 +13,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 import client from "../api/client";
 import { C, money } from "../theme";
+import LiveClock from "../components/LiveClock";
 
 const ACTIONS = [
   { label: "Products", hint: "View and edit items", screen: "Products", icon: "cube-outline" },
   { label: "Restock", hint: "Add new stock", screen: "Restock", icon: "add-circle-outline" },
+  { label: "Sales history", hint: "Past sales and totals", screen: "SalesHistory", icon: "receipt-outline" },
   { label: "Categories", hint: "Organize items", screen: "Categories", icon: "pricetags-outline" },
   { label: "Staff", hint: "Helpers and code", screen: "Staff", icon: "people-outline", ownerOnly: true },
 ];
@@ -103,13 +105,7 @@ export default function DashboardScreen({ navigation, route }) {
       <View style={styles.top}>
         <View style={{ flex: 1 }}>
           <Text style={styles.greeting}>{name ? `Hi, ${name}` : "Welcome"}</Text>
-          <Text style={styles.date}>
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </Text>
+          <LiveClock style={styles.date} />
         </View>
         <TouchableOpacity style={styles.logout} onPress={confirmLogout}>
           <Ionicons name="log-out-outline" size={22} color={C.ink} />

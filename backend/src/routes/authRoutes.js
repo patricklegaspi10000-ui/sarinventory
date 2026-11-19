@@ -5,6 +5,7 @@ const requireOwner = require("../middleware/requireOwner");
 const {
   register,
   login,
+  me,
   registerHelper,
   getStoreCode,
   listStaff,
@@ -21,6 +22,7 @@ const loginLimiter = rateLimit({
 
 router.post("/register", register);
 router.post("/login", loginLimiter, login);
+router.get("/me", auth, me);
 router.post("/register-helper", loginLimiter, registerHelper);
 router.get("/store-code", auth, requireOwner, getStoreCode);
 router.get("/staff", auth, requireOwner, listStaff);
