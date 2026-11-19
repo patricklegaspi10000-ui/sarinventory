@@ -18,6 +18,7 @@ import LiveClock from "../components/LiveClock";
 const ACTIONS = [
   { label: "Products", hint: "View and edit items", screen: "Products", icon: "cube-outline" },
   { label: "Restock", hint: "Add new stock", screen: "Restock", icon: "add-circle-outline" },
+  { label: "Alerts", hint: "Low stock and expiry", screen: "Alerts", icon: "notifications-outline" },
   { label: "Sales history", hint: "Past sales and totals", screen: "SalesHistory", icon: "receipt-outline" },
   { label: "Categories", hint: "Organize items", screen: "Categories", icon: "pricetags-outline" },
   { label: "Reports", hint: "Sales and stock summary", screen: "Reports", icon: "bar-chart-outline", ownerOnly: true },
@@ -136,39 +137,16 @@ export default function DashboardScreen({ navigation, route }) {
           <Text style={styles.tileValue}>{productCount}</Text>
           <Text style={styles.tileLabel}>Products</Text>
         </View>
-        <View
-          style={[
-            styles.tile,
-            { marginLeft: 6 },
-            lowStock.length > 0 && styles.tileWarn,
-          ]}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.tile, { marginLeft: 6 }, lowStock.length > 0 && styles.tileWarn]}
+          onPress={() => go("Alerts")}
         >
           <Text style={[styles.tileValue, lowStock.length > 0 && { color: C.warnText }]}>
             {lowStock.length}
           </Text>
           <Text style={styles.tileLabel}>Low on stock</Text>
-        </View>
-      </View>
-
-      <Text style={styles.section}>Running low</Text>
-      <View style={styles.card}>
-        {lowStock.length === 0 ? (
-          <Text style={styles.muted}>Everything is well stocked.</Text>
-        ) : (
-          lowStock.slice(0, 5).map((p, i) => (
-            <View key={p.id ?? i} style={[styles.lowRow, i > 0 && styles.lowRowBorder]}>
-              <Text style={styles.lowName} numberOfLines={1}>
-                {p.name}
-              </Text>
-              <Text style={[styles.lowQty, p.quantity === 0 && { color: C.red }]}>
-                {p.quantity === 0 ? "Out of stock" : `${p.quantity} left`}
-              </Text>
-            </View>
-          ))
-        )}
-        {lowStock.length > 5 && (
-          <Text style={styles.more}>and {lowStock.length - 5} more</Text>
-        )}
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.section}>Quick actions</Text>
@@ -247,13 +225,6 @@ const styles = StyleSheet.create({
   tileValue: { fontSize: 28, fontWeight: "700", color: C.ink },
   tileLabel: { fontSize: 14, color: C.muted, marginTop: 2 },
   section: { fontSize: 17, fontWeight: "700", color: C.ink, marginTop: 20, marginBottom: 10 },
-  card: { backgroundColor: C.card, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 6 },
-  muted: { color: C.muted, fontSize: 15, paddingVertical: 12 },
-  lowRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12 },
-  lowRowBorder: { borderTopWidth: 1, borderTopColor: C.line },
-  lowName: { flex: 1, fontSize: 15, color: C.ink, marginRight: 12 },
-  lowQty: { fontSize: 15, fontWeight: "600", color: C.warnText },
-  more: { color: C.muted, fontSize: 14, paddingVertical: 10 },
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   action: {
     width: "48%",

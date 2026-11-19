@@ -16,6 +16,7 @@ import RegisterScreen from "./src/screens/RegisterScreen";
 import StaffScreen from "./src/screens/StaffScreen";
 import ScannerScreen from "./src/screens/ScannerScreen";
 import ReportsScreen from "./src/screens/ReportsScreen";
+import AlertsScreen from "./src/screens/AlertsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -70,6 +71,7 @@ export default function App() {
         <Stack.Screen name="Staff" component={StaffScreen} />
         <Stack.Screen name="Scanner" component={ScannerScreen} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
+        <Stack.Screen name="Alerts" component={AlertsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
