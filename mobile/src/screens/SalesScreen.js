@@ -8,10 +8,11 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import client from "../api/client";
 import { C, money, errorText } from "../theme";
 
-export default function SalesScreen({ navigation }) {
+export default function SalesScreen({ navigation, route }) {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -35,6 +36,31 @@ export default function SalesScreen({ navigation }) {
     const t = setTimeout(() => load().finally(() => setLoading(false)), 300);
     return () => clearTimeout(t);
   }, [load]);
+
+  // a code came back from the Scanner screen
+  useEffect(() => {
+    const code = route.params?.scannedCode;
+    if (!code) return;
+    (async () => {
+      try {
+        const res = await client.get(`/products/barcode/${encodeURIComponent(code)}`);
+        const p = res.data;
+        if (p.quantity === 0) {
+          setSelected(null);
+          setMessage({ type: "error", text: `${p.name} is out of stock` });
+        } else {
+          pick(p);
+        }
+      } catch (err) {
+        setSelected(null);
+        if (err.response && err.response.status === 404) {
+          setMessage({ type: "error", text: "Product not found" });
+        } else {
+          setMessage({ type: "error", text: errorText(err) });
+        }
+      }
+    })();
+  }, [route.params?.scannedAt]);
 
   function pick(p) {
     setSelected(p);
@@ -103,13 +129,21 @@ export default function SalesScreen({ navigation }) {
         </Text>
       )}
 
-      <TextInput
-        style={styles.search}
-        placeholder="Search for the product sold"
-        value={search}
-        onChangeText={setSearch}
-        autoCapitalize="none"
-      />
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.search}
+          placeholder="Search for the product sold"
+          value={search}
+          onChangeText={setSearch}
+          autoCapitalize="none"
+        />
+        <TouchableOpacity
+          style={styles.scanBtn}
+          onPress={() => navigation.navigate("Scanner", { returnTo: "Sales" })}
+        >
+          <Ionicons name="barcode-outline" size={26} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
       {loading ? (
         <ActivityIndicator style={{ marginTop: 40 }} size="large" color={C.green} />
@@ -194,13 +228,23 @@ const styles = StyleSheet.create({
   bannerOk: { backgroundColor: "#DDF1E8", color: C.green },
   bannerWarn: { backgroundColor: C.warnBg, color: C.warnText },
   bannerError: { backgroundColor: C.redBg, color: C.red },
+  searchRow: { flexDirection: "row", alignItems: "center", marginHorizontal: 20 },
   search: {
+    flex: 1,
     backgroundColor: C.card,
     borderRadius: 12,
-    marginHorizontal: 20,
     padding: 12,
     borderWidth: 1,
     borderColor: C.line,
+  },
+  scanBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: C.green,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 10,
   },
   empty: { textAlign: "center", color: C.muted, marginTop: 40, fontSize: 15 },
   row: {

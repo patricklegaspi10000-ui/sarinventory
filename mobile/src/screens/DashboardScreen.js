@@ -20,6 +20,7 @@ const ACTIONS = [
   { label: "Restock", hint: "Add new stock", screen: "Restock", icon: "add-circle-outline" },
   { label: "Sales history", hint: "Past sales and totals", screen: "SalesHistory", icon: "receipt-outline" },
   { label: "Categories", hint: "Organize items", screen: "Categories", icon: "pricetags-outline" },
+  { label: "Reports", hint: "Sales and stock summary", screen: "Reports", icon: "bar-chart-outline", ownerOnly: true },
   { label: "Staff", hint: "Helpers and code", screen: "Staff", icon: "people-outline", ownerOnly: true },
 ];
 

@@ -15,6 +15,7 @@ app.use("/api/v1/products", require("./src/routes/productRoutes"));
 app.use("/api/v1/sales", require("./src/routes/saleRoutes"));
 app.use("/api/v1/restocks", require("./src/routes/restockRoutes"));
 app.use("/api/v1/dashboard", require("./src/routes/dashboardRoutes"));
+app.use("/api/v1/reports", require("./src/routes/reportRoutes"));
 connectDB()
   .then(() =>
     app.listen(process.env.PORT, () =>
